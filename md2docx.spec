@@ -45,17 +45,24 @@ for pkg in ["markitdown", "docx", "bs4", "lxml", "PIL", "openpyxl", "pdfminer"]:
     except Exception:
         pass
 
+import magika, os as _os
+_magika_dir = _os.path.dirname(magika.__file__)
+_magika_datas = [
+    (_os.path.join(_magika_dir, 'models'), 'magika/models'),
+    (_os.path.join(_magika_dir, 'config'), 'magika/config'),
+]
+
 a = Analysis(
     ['app.py'],
     pathex=[],
     binaries=[],
-    datas=[],
+    datas=_magika_datas,
     hiddenimports=hiddenimports,
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
     excludes=[
-        'tkinter.test', 'unittest', 'email', 'http.server',
+        'tkinter.test', 'unittest', 'http.server',
         'pydoc', 'distutils', 'setuptools', 'pip',
     ],
     noarchive=False,
