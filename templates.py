@@ -96,6 +96,14 @@ FONT_LIST = [
 # Common font sizes in pt
 SIZE_LIST = [9, 10, 10.5, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 42, 48]
 
+# Paper size constants (width_cm, height_cm)
+PAPER_SIZES = {
+    "A4":  (21.0, 29.7),
+    "A3":  (29.7, 42.0),
+    "8K":  (26.0, 36.8),
+    "16K": (18.4, 26.0),
+}
+
 # Preset color swatches
 COLOR_PRESETS = [
     "#000000", "#333333", "#666666", "#999999",

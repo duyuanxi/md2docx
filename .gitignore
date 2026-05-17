@@ -1,31 +1,7 @@
-# Bytecode
 __pycache__/
-*.pyc
-
-# Build artifacts
 build/
 dist/
-*.spec
-
-# Virtual environment
-venv/
-.venv/
-
-# IDE
-.vscode/
-.idea/
-
-# OS
-.DS_Store
-Thumbs.db
-desktop.ini
-
-# Test outputs
-test_output.docx
-test_*.docx
-
-# User data
+*.pyc
+*.pyo
 templates.json
-
-# Temp
-_ref.jpg
+*.lnk

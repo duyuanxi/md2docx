@@ -11,27 +11,21 @@ from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from docx.shared import Cm, Pt, RGBColor
 
+from templates import PAPER_SIZES
+
 
 def _clean_ai_blank_lines(text: str) -> str:
     """Smart clean for AI exports (Doubao/ChatGPT):
-    - Remove lines that are only whitespace
+    - Trim trailing whitespace per line (catches whitespace-only lines)
     - Merge 3+ consecutive blank lines into 1
-    - Trim trailing whitespace from every line
     """
-    # Trim trailing whitespace per line
     lines = [line.rstrip() for line in text.split("\n")]
-    # Remove lines that became empty after rstrip (whitespace-only lines)
-    # but preserve intentional blank lines (single empty strings)
-    cleaned = []
-    for line in lines:
-        cleaned.append(line)
-    # Merge 3+ consecutive empty lines → 1 empty line
     result = []
     empty_count = 0
-    for line in cleaned:
-        if line == "":
+    for line in lines:
+        if line == "":  # rstrip turned whitespace-only lines into ""
             empty_count += 1
-            if empty_count <= 1:  # max 1 blank line
+            if empty_count <= 1:
                 result.append(line)
         else:
             empty_count = 0
@@ -188,10 +182,17 @@ def _process_block(element, doc: Document, t: dict) -> None:
 
     elif tag == "hr":
         para = doc.add_paragraph()
-        _set_paragraph_spacing(para, 12, 12, t["line_spacing_pt"])
-        para.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        run = para.add_run("─" * 50)
-        _set_run_font(run, t["body_font"], 8, "#999999")
+        _set_paragraph_spacing(para, 8, 8, t["line_spacing_pt"])
+        # Single-line separator: paragraph with bottom border (proper Word horizontal rule)
+        pPr = para._element.get_or_add_pPr()
+        pBdr = OxmlElement("w:pBdr")
+        bottom = OxmlElement("w:bottom")
+        bottom.set(qn("w:val"), "single")
+        bottom.set(qn("w:sz"), "6")
+        bottom.set(qn("w:space"), "4")
+        bottom.set(qn("w:color"), "999999")
+        pBdr.append(bottom)
+        pPr.append(pBdr)
 
     elif tag == "table":
         rows = element.find_all("tr")
@@ -238,9 +239,7 @@ def convert_text(md_text: str, docx_path: str, template: dict,
 
     # Paper size
     ps = template.get("page_size", "A4")
-    _PAGE_DIMS = {"A4": (21.0, 29.7), "A3": (29.7, 42.0),
-                  "8K": (26.0, 36.8), "16K": (18.4, 26.0)}
-    pw, ph = _PAGE_DIMS.get(ps, _PAGE_DIMS["A4"])
+    pw, ph = PAPER_SIZES.get(ps, PAPER_SIZES["A4"])
 
     for section in doc.sections:
         section.page_width = Cm(pw)
@@ -254,7 +253,17 @@ def convert_text(md_text: str, docx_path: str, template: dict,
     top_elements = list(body.children) if body else list(soup.children)
     _process_elements(top_elements, doc, template)
 
-    doc.save(docx_path)
+    try:
+        doc.save(docx_path)
+    except PermissionError:
+        raise PermissionError(
+            f"无法写入文件「{docx_path}」——文件可能已被其他程序（如 Word）打开。\n请关闭该文件后重试，或另存为其他文件名。")
+    except FileNotFoundError:
+        raise FileNotFoundError(
+            f"保存路径不存在「{docx_path}」。\n请确认目标文件夹存在。")
+    except OSError as e:
+        raise OSError(
+            f"保存文件失败「{docx_path}」。\n可能原因：磁盘已满、路径过长、或文件夹权限不足。\n原始错误: {e}")
     return docx_path
 
 
